@@ -27,13 +27,32 @@ const mobileControls = document.getElementById("mobile-controls");
 
 /* Lazy load audio on first interaction */
 let audioInitialized = false;
+let audioContext = null;
+let musicGainNode = null;
+
 function initAudio() {
   if (audioInitialized) return;
   audioInitialized = true;
-  if (music) {
-    music.src = "music.mp3";
-    music.volume = 0.02; // Set volume immediately when loading
+  
+  // Create Web Audio API context for iOS volume control
+  try {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    if (music) {
+      music.src = "music.mp3";
+      const source = audioContext.createMediaElementSource(music);
+      musicGainNode = audioContext.createGain();
+      musicGainNode.gain.value = 0.06; // Music volume (0-1)
+      source.connect(musicGainNode);
+      musicGainNode.connect(audioContext.destination);
+    }
+  } catch (e) {
+    // Fallback if Web Audio API fails
+    if (music) {
+      music.src = "music.mp3";
+      music.volume = 0.06;
+    }
   }
+  
   if (readySfx) readySfx.src = "are-you-ready.m4a";
   if (hitSfx) hitSfx.src = "hit.m4a";
   if (winnerPresound) winnerPresound.src = "winner-presound.mp3";
@@ -312,19 +331,14 @@ function announceWinner(name) {
 
 function startMusic() {
   if (!music) return;
-  // Set volume multiple times to ensure it sticks on mobile
-  music.volume = 0.02;
-  music.loop = true;
   
-  const playPromise = music.play();
-  if (playPromise !== undefined) {
-    playPromise.then(() => {
-      // Re-apply volume after play starts (mobile browsers sometimes reset)
-      music.volume = 0.02;
-      // Check again after a short delay
-      setTimeout(() => { music.volume = 0.02; }, 100);
-    }).catch(() => {});
+  // Resume audio context (required for iOS after user interaction)
+  if (audioContext && audioContext.state === 'suspended') {
+    audioContext.resume();
   }
+  
+  music.loop = true;
+  music.play().catch(() => {});
 }
 
 function playReadySfx() {
