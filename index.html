@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Little Fight!</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <audio id="music" src="music.mp3" preload="auto" loop></audio>
+      <audio id="ready-sfx" src="are you ready.m4a" preload="auto"></audio>
+      <audio id="hit-sfx" src="hit.m4a" preload="auto"></audio>
+      <audio id="winner-presound" src="winner presound.mp3" preload="auto"></audio>
+      <audio id="little-wins" src="little wins.m4a" preload="auto"></audio>
+      <audio id="big-wins" src="big wins.m4a" preload="auto"></audio>
+      <header class="hud">
+        <div class="logo">Little Fight!</div>
+        <div class="status">
+          <div class="health">
+            <span class="label">Little Fighter</span>
+            <div class="bar">
+              <div id="little-health" class="fill"></div>
+            </div>
+          </div>
+          <div class="health">
+            <span class="label">Big Fighter</span>
+            <div class="bar">
+              <div id="big-health" class="fill"></div>
+            </div>
+          </div>
+        </div>
+        <button id="restart" class="restart">Restart</button>
+      </header>
+
+      <main class="stage">
+        <canvas id="game" width="1100" height="620"></canvas>
+        <div class="overlay" id="overlay">
+          <div class="overlay-card">
+            <h1 id="result">Ready?</h1>
+            <div id="stats" class="stats"></div>
+            <p id="prompt">Press <strong>Space</strong> or <strong>Enter</strong> to start!</p>
+            <div id="mode-select" class="mode-select">
+              <div class="mode-title">Choose mode</div>
+              <div class="mode-buttons">
+                <button id="mode-single" class="mode active" data-mode="single">Single (vs Bot)</button>
+                <button id="mode-two" class="mode" data-mode="two">2 Players</button>
+              </div>
+              <div id="character-select" class="character-select">
+                <div class="mode-title">Choose your fighter</div>
+                <div class="mode-buttons">
+                  <button id="choose-little" class="mode active" data-player="little">Little Fighter</button>
+                  <button id="choose-big" class="mode" data-player="big">Big Fighter</button>
+                </div>
+              </div>
+            </div>
+            <button id="start-button" class="start">Start Game</button>
+          </div>
+        </div>
+      </main>
+
+      <section class="controls">
+        <div>
+          <h2>Little Fighter</h2>
+          <p>Move: A / D</p>
+          <p>Jump: W</p>
+          <p>Dash: S</p>
+          <p>Attack: Space</p>
+        </div>
+        <div>
+          <h2>Big Fighter</h2>
+          <p>Move: ← / →</p>
+          <p>Jump: ↑</p>
+          <p>Dash: ↓</p>
+          <p>Attack: Enter</p>
+        </div>
+      </section>
+    </div>
+
+    <script src="game.js"></script>
+  </body>
+</html>
