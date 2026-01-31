@@ -30,7 +30,10 @@ let audioInitialized = false;
 function initAudio() {
   if (audioInitialized) return;
   audioInitialized = true;
-  if (music) music.src = "music.mp3";
+  if (music) {
+    music.src = "music.mp3";
+    music.volume = 0.02; // Set volume immediately when loading
+  }
   if (readySfx) readySfx.src = "are-you-ready.m4a";
   if (hitSfx) hitSfx.src = "hit.m4a";
   if (winnerPresound) winnerPresound.src = "winner-presound.mp3";
@@ -309,9 +312,19 @@ function announceWinner(name) {
 
 function startMusic() {
   if (!music) return;
-  music.volume = 0.015;
+  // Set volume multiple times to ensure it sticks on mobile
+  music.volume = 0.02;
   music.loop = true;
-  music.play().catch(() => {});
+  
+  const playPromise = music.play();
+  if (playPromise !== undefined) {
+    playPromise.then(() => {
+      // Re-apply volume after play starts (mobile browsers sometimes reset)
+      music.volume = 0.02;
+      // Check again after a short delay
+      setTimeout(() => { music.volume = 0.02; }, 100);
+    }).catch(() => {});
+  }
 }
 
 function playReadySfx() {
