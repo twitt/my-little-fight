@@ -221,10 +221,9 @@ body.theme-cyber .mobile-btn:active {
 .hud {
   background: var(--game-card);
   border-radius: 16px;
-  padding: 12px 16px;
+  padding: 10px 16px;
   box-shadow: 0 12px 32px rgba(0, 40, 120, 0.12);
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -484,26 +483,30 @@ canvas {
 /* ===== MOBILE CONTROLS ===== */
 .mobile-controls {
   display: none;
-  gap: 12px;
-  justify-content: center;
+  justify-content: space-between;
   align-items: stretch;
   padding: 10px 0;
+  gap: 20px;
 }
 
 .mobile-side {
-  display: grid;
+  display: flex;
   gap: 8px;
-  flex: 1;
-  max-width: 45%;
+  align-items: center;
 }
 
 .mobile-side.hidden {
-  display: none;
+  display: none !important;
 }
 
-/* When only one side is visible, center and expand it */
-.mobile-controls:has(.mobile-side.hidden) .mobile-side:not(.hidden) {
-  max-width: 60%;
+.mobile-left {
+  justify-content: flex-start;
+}
+
+.mobile-right {
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
 }
 
 .mobile-row {
@@ -513,22 +516,25 @@ canvas {
 }
 
 .mobile-btn {
-  flex: 1;
-  min-width: 56px;
-  max-width: 90px;
-  min-height: 52px;
-  padding: 12px 10px;
+  min-width: 64px;
+  min-height: 56px;
+  padding: 14px 16px;
   border-radius: 14px;
   border: none;
   background: var(--game-card);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   color: #181a33;
   cursor: pointer;
   transition: all 0.1s ease;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+}
+
+.mobile-right .mobile-btn {
+  min-width: 80px;
+  min-height: 60px;
 }
 
 .mobile-btn:active {

@@ -20,9 +20,6 @@ const hitSfx = document.getElementById("hit-sfx");
 const winnerPresound = document.getElementById("winner-presound");
 const littleWinsSfx = document.getElementById("little-wins");
 const bigWinsSfx = document.getElementById("big-wins");
-const restartButton = document.getElementById("restart");
-const littleHealthBar = document.getElementById("little-health");
-const bigHealthBar = document.getElementById("big-health");
 const mobileControls = document.getElementById("mobile-controls");
 
 /* Lazy load audio on first interaction */
@@ -223,7 +220,8 @@ function resetFightersForFight() {
 }
 
 function getScaleFactor() {
-  return Math.min(world.width / 1100, world.height / 620, 1);
+  // Don't scale below 0.6 to keep characters visible on mobile
+  return Math.max(0.6, Math.min(world.width / 1100, world.height / 620, 1));
 }
 
 function resizeCanvas() {
@@ -236,22 +234,23 @@ function resizeCanvas() {
   world.height = rect.height;
   world.floor = world.height - Math.max(60, world.height * 0.15);
   
-  // Update fighter sizes based on scale
+  // Update fighter sizes based on scale (minimum sizes for mobile)
   const scale = getScaleFactor();
-  fighters.little.desiredHeight = Math.round(160 * scale);
+  fighters.little.desiredHeight = Math.max(100, Math.round(160 * scale));
   fighters.little.drawHeight = fighters.little.desiredHeight;
-  fighters.big.desiredHeight = Math.round(220 * scale);
+  fighters.big.desiredHeight = Math.max(140, Math.round(220 * scale));
   fighters.big.drawHeight = fighters.big.desiredHeight;
   updateFighterSize(fighters.little);
   updateFighterSize(fighters.big);
   
-  // Scale movement values
-  fighters.little.speed = 6 * scale;
-  fighters.little.jumpPower = 18 * scale;
-  fighters.little.dashPower = 11 * scale;
-  fighters.big.speed = 5 * scale;
-  fighters.big.jumpPower = 17 * scale;
-  fighters.big.dashPower = 10 * scale;
+  // Keep movement values constant - don't scale them
+  // This ensures consistent gameplay feel across devices
+  fighters.little.speed = 6;
+  fighters.little.jumpPower = 18;
+  fighters.little.dashPower = 11;
+  fighters.big.speed = 5;
+  fighters.big.jumpPower = 17;
+  fighters.big.dashPower = 10;
 }
 
 function showOverlay(text, visible, statsHtml = "") {
@@ -286,23 +285,119 @@ function syncModeUi() {
   chooseLittleButton.classList.toggle("active", state.playerSide === "little");
   chooseBigButton.classList.toggle("active", state.playerSide === "big");
   
-  // Show/hide mobile controls based on mode
+  // Show/hide mobile controls based on mode and player side
   const littleSide = document.getElementById("mobile-little");
   const bigSide = document.getElementById("mobile-big");
-  if (littleSide && bigSide) {
+  const littleActions = document.getElementById("mobile-actions-little");
+  const bigActions = document.getElementById("mobile-actions-big");
+  
+  if (littleSide && bigSide && littleActions && bigActions) {
     if (state.mode === "two") {
+      // 2-player mode: show both sides (but this won't happen on phones)
       littleSide.classList.remove("hidden");
       bigSide.classList.remove("hidden");
+      littleActions.classList.remove("hidden");
+      bigActions.classList.remove("hidden");
     } else {
-      littleSide.classList.toggle("hidden", state.playerSide !== "little");
-      bigSide.classList.toggle("hidden", state.playerSide !== "big");
+      // Single player: show only the chosen player's controls
+      const isLittle = state.playerSide === "little";
+      littleSide.classList.toggle("hidden", !isLittle);
+      bigSide.classList.toggle("hidden", isLittle);
+      littleActions.classList.toggle("hidden", !isLittle);
+      bigActions.classList.toggle("hidden", isLittle);
     }
   }
 }
 
 function updateHealthBars() {
-  littleHealthBar.style.width = `${fighters.little.health}%`;
-  bigHealthBar.style.width = `${fighters.big.health}%`;
+  // Health bars are now drawn on canvas, this function kept for compatibility
+}
+
+function drawHealthBars() {
+  const cyber = isCyberTheme();
+  const barWidth = Math.min(200, world.width * 0.22);
+  const barHeight = 16;
+  const padding = 15;
+  const labelOffset = 18;
+  
+  // Little Fighter health bar (left side)
+  const littleX = padding;
+  const littleY = padding + labelOffset;
+  
+  // Label
+  ctx.font = "bold 12px Fredoka, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillStyle = cyber ? "#a8b0cc" : "#3b415c";
+  ctx.fillText("Little Fighter", littleX, padding + 12);
+  
+  // Bar background
+  ctx.fillStyle = cyber ? "rgba(255, 255, 255, 0.1)" : "rgba(230, 235, 255, 0.9)";
+  ctx.beginPath();
+  ctx.roundRect(littleX, littleY, barWidth, barHeight, 8);
+  ctx.fill();
+  
+  // Bar fill
+  const littleFillWidth = (fighters.little.health / 100) * barWidth;
+  if (littleFillWidth > 0) {
+    const littleGrad = ctx.createLinearGradient(littleX, 0, littleX + barWidth, 0);
+    if (cyber) {
+      littleGrad.addColorStop(0, "#00f0ff");
+      littleGrad.addColorStop(1, "#ff2afc");
+    } else {
+      littleGrad.addColorStop(0, "#ff7ad9");
+      littleGrad.addColorStop(1, "#6bffde");
+    }
+    ctx.fillStyle = littleGrad;
+    ctx.beginPath();
+    ctx.roundRect(littleX, littleY, littleFillWidth, barHeight, 8);
+    ctx.fill();
+    
+    if (cyber) {
+      ctx.shadowColor = "#00f0ff";
+      ctx.shadowBlur = 8;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  }
+  
+  // Big Fighter health bar (right side)
+  const bigX = world.width - barWidth - padding;
+  const bigY = padding + labelOffset;
+  
+  // Label
+  ctx.textAlign = "right";
+  ctx.fillStyle = cyber ? "#a8b0cc" : "#3b415c";
+  ctx.fillText("Big Fighter", world.width - padding, padding + 12);
+  
+  // Bar background
+  ctx.fillStyle = cyber ? "rgba(255, 255, 255, 0.1)" : "rgba(230, 235, 255, 0.9)";
+  ctx.beginPath();
+  ctx.roundRect(bigX, bigY, barWidth, barHeight, 8);
+  ctx.fill();
+  
+  // Bar fill
+  const bigFillWidth = (fighters.big.health / 100) * barWidth;
+  if (bigFillWidth > 0) {
+    const bigGrad = ctx.createLinearGradient(bigX, 0, bigX + barWidth, 0);
+    if (cyber) {
+      bigGrad.addColorStop(0, "#00f0ff");
+      bigGrad.addColorStop(1, "#ff2afc");
+    } else {
+      bigGrad.addColorStop(0, "#ff7ad9");
+      bigGrad.addColorStop(1, "#6bffde");
+    }
+    ctx.fillStyle = bigGrad;
+    ctx.beginPath();
+    ctx.roundRect(bigX, bigY, bigFillWidth, barHeight, 8);
+    ctx.fill();
+    
+    if (cyber) {
+      ctx.shadowColor = "#00f0ff";
+      ctx.shadowBlur = 8;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  }
 }
 
 function getStatsHtml() {
@@ -877,6 +972,7 @@ function draw() {
 
   drawBackground();
   drawArenaGlow();
+  drawHealthBars();
   drawParticles();
 
   drawFighter(fighters.little);
@@ -966,12 +1062,6 @@ if (mobileControls) {
   });
 }
 
-restartButton.addEventListener("click", () => {
-  initAudio();
-  resetGame();
-  startMusic();
-});
-
 startButton.addEventListener("click", () => {
   initAudio();
   if (state.awaitingConfirm) {
@@ -982,12 +1072,20 @@ startButton.addEventListener("click", () => {
   beginReadySequence();
 });
 
+function isPhone() {
+  return window.innerWidth <= 768 && 'ontouchstart' in window;
+}
+
 modeSingleButton.addEventListener("click", () => {
   state.mode = "single";
   syncModeUi();
 });
 
 modeTwoButton.addEventListener("click", () => {
+  if (isPhone()) {
+    alert("2 Players mode is only available on tablet or computer.");
+    return;
+  }
   state.mode = "two";
   syncModeUi();
 });
