@@ -27,6 +27,8 @@ let audioInitialized = false;
 let audioContext = null;
 let musicGainNode = null;
 let presoundGainNode = null;
+let littleWinsGainNode = null;
+let bigWinsGainNode = null;
 
 function initAudio() {
   if (audioInitialized) return;
@@ -53,22 +55,41 @@ function initAudio() {
       presoundSource.connect(presoundGainNode);
       presoundGainNode.connect(audioContext.destination);
     }
+    
+    if (littleWinsSfx) {
+      littleWinsSfx.src = "little-wins.m4a";
+      const littleWinsSource = audioContext.createMediaElementSource(littleWinsSfx);
+      littleWinsGainNode = audioContext.createGain();
+      littleWinsGainNode.gain.value = 1.2; // Winner sound volume (amplified)
+      littleWinsSource.connect(littleWinsGainNode);
+      littleWinsGainNode.connect(audioContext.destination);
+    }
+    
+    if (bigWinsSfx) {
+      bigWinsSfx.src = "big-wins.m4a";
+      const bigWinsSource = audioContext.createMediaElementSource(bigWinsSfx);
+      bigWinsGainNode = audioContext.createGain();
+      bigWinsGainNode.gain.value = 1.2; // Winner sound volume (amplified)
+      bigWinsSource.connect(bigWinsGainNode);
+      bigWinsGainNode.connect(audioContext.destination);
+    }
   } catch (e) {
     // Fallback if Web Audio API fails
     if (music) {
       music.src = "music.mp3";
-      music.volume = 0.06;
+      music.volume = 0.04;
     }
     if (winnerPresound) {
       winnerPresound.src = "winner-presound.mp3";
-      winnerPresound.volume = 0.15;
+      winnerPresound.volume = 0.1;
     }
   }
   
   if (readySfx) readySfx.src = "are-you-ready.m4a";
   if (hitSfx) hitSfx.src = "hit.m4a";
-  if (littleWinsSfx) littleWinsSfx.src = "little-wins.m4a";
-  if (bigWinsSfx) bigWinsSfx.src = "big-wins.m4a";
+  // Winner sounds are loaded via Web Audio API above, fallback here
+  if (littleWinsSfx && !littleWinsGainNode) littleWinsSfx.src = "little-wins.m4a";
+  if (bigWinsSfx && !bigWinsGainNode) bigWinsSfx.src = "big-wins.m4a";
 }
 
 const assets = {
@@ -494,7 +515,7 @@ function playWinSfx(name) {
 
   winnerSound.pause();
   winnerSound.currentTime = 0;
-  winnerSound.volume = 1.0;
+  // Volume controlled by Web Audio API gain node (1.2)
 
   if (!winnerPresound) {
     winnerSound.play().catch(() => {});
