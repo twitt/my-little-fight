@@ -6,6 +6,8 @@ const resultLabel = document.getElementById("result");
 const promptLabel = document.getElementById("prompt");
 const statsBox = document.getElementById("stats");
 const startButton = document.getElementById("start-button");
+const themeGameButton = document.getElementById("theme-game");
+const themeCyberButton = document.getElementById("theme-cyber");
 const modeSelect = document.getElementById("mode-select");
 const modeSingleButton = document.getElementById("mode-single");
 const modeTwoButton = document.getElementById("mode-two");
@@ -21,6 +23,20 @@ const bigWinsSfx = document.getElementById("big-wins");
 const restartButton = document.getElementById("restart");
 const littleHealthBar = document.getElementById("little-health");
 const bigHealthBar = document.getElementById("big-health");
+const mobileControls = document.getElementById("mobile-controls");
+
+/* Lazy load audio on first interaction */
+let audioInitialized = false;
+function initAudio() {
+  if (audioInitialized) return;
+  audioInitialized = true;
+  if (music) music.src = "music.mp3";
+  if (readySfx) readySfx.src = "are-you-ready.m4a";
+  if (hitSfx) hitSfx.src = "hit.m4a";
+  if (winnerPresound) winnerPresound.src = "winner-presound.mp3";
+  if (littleWinsSfx) littleWinsSfx.src = "little-wins.m4a";
+  if (bigWinsSfx) bigWinsSfx.src = "big-wins.m4a";
+}
 
 const assets = {
   little: new Image(),
@@ -166,6 +182,17 @@ function resetFightersForFight() {
   fighters.big.dashCooldown = 0;
   fighters.big.hitFlash = 0;
   fighters.big.hits = 0;
+}
+
+function resizeCanvas() {
+  const rect = canvas.getBoundingClientRect();
+  const scale = window.devicePixelRatio || 1;
+  canvas.width = Math.round(rect.width * scale);
+  canvas.height = Math.round(rect.height * scale);
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  world.width = rect.width;
+  world.height = rect.height;
+  world.floor = world.height - 120;
 }
 
 function showOverlay(text, visible, statsHtml = "") {
@@ -495,38 +522,179 @@ function updateParticles() {
   });
 }
 
+function isCyberTheme() {
+  return document.body.classList.contains("theme-cyber");
+}
+
 function drawBackground() {
+  const cyber = isCyberTheme();
   const gradient = ctx.createLinearGradient(0, 0, 0, world.height);
-  gradient.addColorStop(0, "#89e0ff");
-  gradient.addColorStop(0.55, "#bfffd9");
-  gradient.addColorStop(1, "#fff2b4");
+  
+  if (cyber) {
+    gradient.addColorStop(0, "#0a001a");
+    gradient.addColorStop(0.3, "#1a0a3d");
+    gradient.addColorStop(0.7, "#0d0d2a");
+    gradient.addColorStop(1, "#050510");
+  } else {
+    gradient.addColorStop(0, "#89e0ff");
+    gradient.addColorStop(0.55, "#bfffd9");
+    gradient.addColorStop(1, "#fff2b4");
+  }
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, world.width, world.height);
 
-  for (let i = 0; i < 10; i += 1) {
-    const x = 60 + i * 100;
-    const y = 80 + Math.sin(state.time * 0.02 + i) * 8;
-    ctx.fillStyle = "rgba(255,255,255,0.6)";
-    ctx.beginPath();
-    ctx.arc(x, y, 24, 0, Math.PI * 2);
-    ctx.arc(x + 24, y + 8, 18, 0, Math.PI * 2);
-    ctx.arc(x - 26, y + 6, 18, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  if (cyber) {
+    // Animated stars/data particles
+    for (let i = 0; i < 40; i++) {
+      const x = (i * 37 + state.time * 0.3) % world.width;
+      const y = (i * 23 + state.time * 0.1) % (world.floor - 50);
+      const size = 1 + Math.sin(state.time * 0.05 + i) * 0.5;
+      const alpha = 0.3 + Math.sin(state.time * 0.08 + i * 2) * 0.3;
+      ctx.fillStyle = i % 3 === 0 ? `rgba(255, 42, 252, ${alpha})` : `rgba(0, 240, 255, ${alpha})`;
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
-  ctx.fillStyle = "#7edc79";
-  ctx.fillRect(0, world.floor + 20, world.width, world.height - world.floor);
+    // City skyline silhouette
+    ctx.fillStyle = "#0a0a18";
+    const buildings = [
+      { x: 0, w: 60, h: 120 },
+      { x: 55, w: 40, h: 80 },
+      { x: 90, w: 50, h: 140 },
+      { x: 135, w: 35, h: 100 },
+      { x: 165, w: 55, h: 160 },
+      { x: 215, w: 45, h: 90 },
+      { x: 255, w: 60, h: 130 },
+      { x: 310, w: 40, h: 110 },
+      { x: 345, w: 50, h: 150 },
+      { x: 390, w: 35, h: 85 },
+      { x: 420, w: 55, h: 170 },
+      { x: 470, w: 45, h: 95 },
+      { x: 510, w: 60, h: 125 },
+      { x: 565, w: 40, h: 145 },
+      { x: 600, w: 50, h: 100 },
+      { x: 645, w: 55, h: 155 },
+      { x: 695, w: 45, h: 115 },
+      { x: 735, w: 60, h: 135 },
+      { x: 790, w: 40, h: 90 },
+      { x: 825, w: 50, h: 165 },
+      { x: 870, w: 55, h: 105 },
+      { x: 920, w: 45, h: 140 },
+      { x: 960, w: 60, h: 120 },
+      { x: 1015, w: 50, h: 150 },
+      { x: 1060, w: 45, h: 95 },
+    ];
+    buildings.forEach((b) => {
+      ctx.fillRect(b.x, world.floor - b.h + 40, b.w, b.h + 40);
+    });
 
-  ctx.fillStyle = "#5ccf77";
-  for (let i = 0; i < world.width; i += 40) {
-    ctx.fillRect(i, world.floor + 10, 20, 10);
+    // Building windows (randomly lit)
+    buildings.forEach((b, bi) => {
+      for (let wy = world.floor - b.h + 50; wy < world.floor + 20; wy += 18) {
+        for (let wx = b.x + 6; wx < b.x + b.w - 6; wx += 12) {
+          const lit = Math.sin(bi * 7 + wx * 0.1 + wy * 0.05 + state.time * 0.02) > 0.3;
+          if (lit) {
+            const flicker = 0.4 + Math.sin(state.time * 0.1 + wx + wy) * 0.2;
+            const isNeon = (bi + Math.floor(wx / 12)) % 5 === 0;
+            ctx.fillStyle = isNeon 
+              ? `rgba(255, 42, 252, ${flicker})` 
+              : `rgba(0, 240, 255, ${flicker * 0.6})`;
+            ctx.fillRect(wx, wy, 6, 10);
+          }
+        }
+      }
+    });
+
+    // Perspective grid floor
+    ctx.strokeStyle = "rgba(0, 240, 255, 0.25)";
+    ctx.lineWidth = 1;
+    const horizon = world.floor - 60;
+    const floorY = world.floor + 20;
+    // Horizontal lines with perspective
+    for (let i = 0; i < 12; i++) {
+      const t = i / 12;
+      const y = horizon + (floorY - horizon) * Math.pow(t, 0.7);
+      const alpha = 0.1 + t * 0.2;
+      ctx.strokeStyle = `rgba(0, 240, 255, ${alpha})`;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(world.width, y);
+      ctx.stroke();
+    }
+    // Vertical lines converging
+    const vanishX = world.width / 2;
+    for (let i = -15; i <= 15; i++) {
+      const bottomX = vanishX + i * 50;
+      const topX = vanishX + i * 8;
+      ctx.strokeStyle = `rgba(255, 42, 252, ${0.08 + Math.abs(i) * 0.01})`;
+      ctx.beginPath();
+      ctx.moveTo(topX, horizon);
+      ctx.lineTo(bottomX, floorY + 60);
+      ctx.stroke();
+    }
+
+    // Neon glow strip at horizon
+    const glowGrad = ctx.createLinearGradient(0, horizon - 20, 0, horizon + 40);
+    glowGrad.addColorStop(0, "rgba(255, 42, 252, 0)");
+    glowGrad.addColorStop(0.4, "rgba(255, 42, 252, 0.3)");
+    glowGrad.addColorStop(0.6, "rgba(0, 240, 255, 0.25)");
+    glowGrad.addColorStop(1, "rgba(0, 240, 255, 0)");
+    ctx.fillStyle = glowGrad;
+    ctx.fillRect(0, horizon - 20, world.width, 60);
+
+    // Animated scan line
+    const scanY = (state.time * 2) % world.height;
+    ctx.fillStyle = "rgba(0, 240, 255, 0.08)";
+    ctx.fillRect(0, scanY, world.width, 3);
+
+    // Floor
+    const floorGrad = ctx.createLinearGradient(0, world.floor, 0, world.height);
+    floorGrad.addColorStop(0, "#0a0a20");
+    floorGrad.addColorStop(1, "#050510");
+    ctx.fillStyle = floorGrad;
+    ctx.fillRect(0, world.floor + 20, world.width, world.height - world.floor);
+    
+    // Glowing floor edge
+    ctx.shadowColor = "#00f0ff";
+    ctx.shadowBlur = 15;
+    ctx.fillStyle = "#00f0ff";
+    ctx.fillRect(0, world.floor + 18, world.width, 3);
+    ctx.shadowBlur = 0;
+
+  } else {
+    // Clouds for game theme
+    for (let i = 0; i < 10; i += 1) {
+      const x = 60 + i * 100;
+      const y = 80 + Math.sin(state.time * 0.02 + i) * 8;
+      ctx.fillStyle = "rgba(255,255,255,0.6)";
+      ctx.beginPath();
+      ctx.arc(x, y, 24, 0, Math.PI * 2);
+      ctx.arc(x + 24, y + 8, 18, 0, Math.PI * 2);
+      ctx.arc(x - 26, y + 6, 18, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // Grass
+    ctx.fillStyle = "#7edc79";
+    ctx.fillRect(0, world.floor + 20, world.width, world.height - world.floor);
+    ctx.fillStyle = "#5ccf77";
+    for (let i = 0; i < world.width; i += 40) {
+      ctx.fillRect(i, world.floor + 10, 20, 10);
+    }
   }
 }
 
 function drawArenaGlow() {
   ctx.save();
-  ctx.globalAlpha = 0.25;
-  ctx.fillStyle = "#ffffff";
+  if (isCyberTheme()) {
+    ctx.globalAlpha = 0.4;
+    ctx.shadowColor = "#ff2afc";
+    ctx.shadowBlur = 30;
+    ctx.fillStyle = "#ff2afc";
+  } else {
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = "#ffffff";
+  }
   ctx.beginPath();
   ctx.ellipse(world.width / 2, world.floor + 40, 420, 80, 0, 0, Math.PI * 2);
   ctx.fill();
@@ -693,12 +861,42 @@ window.addEventListener("keyup", (event) => {
   keys.delete(event.code);
 });
 
+if (mobileControls) {
+  mobileControls.querySelectorAll("[data-key]").forEach((button) => {
+    const key = button.dataset.key;
+    const press = (event) => {
+      event.preventDefault();
+      keys.add(key);
+      if (state.running) {
+        if ((state.mode === "two" || state.playerSide === "little") && key === "Space") {
+          tryAttack(fighters.little, fighters.big);
+        }
+        if ((state.mode === "two" || state.playerSide === "big") && key === "Enter") {
+          tryAttack(fighters.big, fighters.little);
+        }
+      }
+    };
+    const release = (event) => {
+      event.preventDefault();
+      keys.delete(key);
+    };
+    button.addEventListener("touchstart", press, { passive: false });
+    button.addEventListener("touchend", release, { passive: false });
+    button.addEventListener("touchcancel", release, { passive: false });
+    button.addEventListener("mousedown", press);
+    button.addEventListener("mouseup", release);
+    button.addEventListener("mouseleave", release);
+  });
+}
+
 restartButton.addEventListener("click", () => {
+  initAudio();
   resetGame();
   startMusic();
 });
 
 startButton.addEventListener("click", () => {
+  initAudio();
   if (state.awaitingConfirm) {
     resetGame();
     beginReadySequence();
@@ -727,5 +925,23 @@ chooseBigButton.addEventListener("click", () => {
   syncModeUi();
 });
 
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+setTheme("game");
 resetGame();
 loop();
+
+function setTheme(theme) {
+  document.body.classList.toggle("theme-cyber", theme === "cyber");
+  if (themeGameButton && themeCyberButton) {
+    themeGameButton.classList.toggle("active", theme === "game");
+    themeCyberButton.classList.toggle("active", theme === "cyber");
+  }
+}
+
+if (themeGameButton) {
+  themeGameButton.addEventListener("click", () => setTheme("game"));
+}
+if (themeCyberButton) {
+  themeCyberButton.addEventListener("click", () => setTheme("cyber"));
+}

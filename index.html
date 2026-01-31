@@ -2,20 +2,31 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#ffe4f3" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Little Fight!</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" href="little-fighter.png" as="image" />
+    <link rel="preload" href="big-fighter.png" as="image" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="page">
-      <audio id="music" src="music.mp3" preload="auto" loop></audio>
-      <audio id="ready-sfx" src="are-you-ready.m4a" preload="auto"></audio>
-      <audio id="hit-sfx" src="hit.m4a" preload="auto"></audio>
-      <audio id="winner-presound" src="winner-presound.mp3" preload="auto"></audio>
-      <audio id="little-wins" src="little-wins.m4a" preload="auto"></audio>
-      <audio id="big-wins" src="big-wins.m4a" preload="auto"></audio>
+      <audio id="music" preload="none" loop></audio>
+      <audio id="ready-sfx" preload="none"></audio>
+      <audio id="hit-sfx" preload="none"></audio>
+      <audio id="winner-presound" preload="none"></audio>
+      <audio id="little-wins" preload="none"></audio>
+      <audio id="big-wins" preload="none"></audio>
       <header class="hud">
         <div class="logo">Little Fight!</div>
+        <div class="themes">
+          <button id="theme-game" class="theme-btn active" data-theme="game">Game</button>
+          <button id="theme-cyber" class="theme-btn" data-theme="cyber">Cyberpunk</button>
+        </div>
         <div class="status">
           <div class="health">
             <span class="label">Little Fighter</span>
@@ -75,6 +86,35 @@
           <p>Attack: Enter</p>
         </div>
       </section>
+
+      <div id="mobile-controls" class="mobile-controls">
+        <div class="mobile-side">
+          <div class="mobile-row">
+            <button class="mobile-btn" data-key="KeyA">◀</button>
+            <button class="mobile-btn" data-key="KeyD">▶</button>
+          </div>
+          <div class="mobile-row">
+            <button class="mobile-btn" data-key="KeyW">Jump</button>
+            <button class="mobile-btn" data-key="KeyS">Dash</button>
+          </div>
+          <div class="mobile-row">
+            <button class="mobile-btn" data-key="Space">Attack</button>
+          </div>
+        </div>
+        <div class="mobile-side">
+          <div class="mobile-row">
+            <button class="mobile-btn" data-key="ArrowLeft">◀</button>
+            <button class="mobile-btn" data-key="ArrowRight">▶</button>
+          </div>
+          <div class="mobile-row">
+            <button class="mobile-btn" data-key="ArrowUp">Jump</button>
+            <button class="mobile-btn" data-key="ArrowDown">Dash</button>
+          </div>
+          <div class="mobile-row">
+            <button class="mobile-btn" data-key="Enter">Attack</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script src="game.js"></script>
