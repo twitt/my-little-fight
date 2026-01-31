@@ -310,6 +310,7 @@ function playWinSfx(name) {
 }
 
 function applyDamage(attacker, defender) {
+  if (!state.running || state.winner) return;
   if (defender.hitFlash > 0) return;
 
   defender.health = clamp(defender.health - 10, 0, 100);
@@ -434,6 +435,7 @@ function updateBot() {
 }
 
 function tryAttack(attacker, defender) {
+  if (!state.running || state.winner) return;
   if (attacker.attackCooldown > 0) return;
   attacker.attackCooldown = 24;
   attacker.glow = 10;
