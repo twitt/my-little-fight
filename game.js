@@ -120,28 +120,7 @@ assets.little.onload = () => updateFighterSize(fighters.little);
 assets.big.onload = () => updateFighterSize(fighters.big);
 
 function resetGame() {
-  fighters.little.x = 220;
-  fighters.little.y = world.floor;
-  fighters.little.vx = 0;
-  fighters.little.vy = 0;
-  fighters.little.facing = 1;
-  fighters.little.health = 100;
-  fighters.little.attackCooldown = 0;
-  fighters.little.dashCooldown = 0;
-  fighters.little.hitFlash = 0;
-  fighters.little.hits = 0;
-
-  fighters.big.x = world.width - 260;
-  fighters.big.y = world.floor;
-  fighters.big.vx = 0;
-  fighters.big.vy = 0;
-  fighters.big.facing = -1;
-  fighters.big.health = 100;
-  fighters.big.attackCooldown = 0;
-  fighters.big.dashCooldown = 0;
-  fighters.big.hitFlash = 0;
-  fighters.big.hits = 0;
-
+  resetFightersForFight();
   state.running = false;
   state.winner = null;
   state.screenShake = 0;
@@ -163,6 +142,30 @@ function resetGame() {
   setStartButtonVisible(true);
   setModeSelectVisible(true);
   syncModeUi();
+}
+
+function resetFightersForFight() {
+  fighters.little.x = 220;
+  fighters.little.y = world.floor;
+  fighters.little.vx = 0;
+  fighters.little.vy = 0;
+  fighters.little.facing = 1;
+  fighters.little.health = 100;
+  fighters.little.attackCooldown = 0;
+  fighters.little.dashCooldown = 0;
+  fighters.little.hitFlash = 0;
+  fighters.little.hits = 0;
+
+  fighters.big.x = world.width - 260;
+  fighters.big.y = world.floor;
+  fighters.big.vx = 0;
+  fighters.big.vy = 0;
+  fighters.big.facing = -1;
+  fighters.big.health = 100;
+  fighters.big.attackCooldown = 0;
+  fighters.big.dashCooldown = 0;
+  fighters.big.hitFlash = 0;
+  fighters.big.hits = 0;
 }
 
 function showOverlay(text, visible, statsHtml = "") {
@@ -233,7 +236,7 @@ function announceWinner(name) {
   state.awaitingConfirm = true;
   state.lockUntil = 0;
   state.confirmPromptShown = true;
-  setPrompt("Press <strong>Space</strong> or <strong>Enter</strong> to confirm!");
+  setPrompt("Tap or click <strong>Start</strong> to play again!");
   showOverlay(`${name} Wins!`, true, getStatsHtml());
   setStartButtonVisible(true);
   setModeSelectVisible(false);
@@ -257,6 +260,11 @@ function playReadySfx() {
 
 function beginReadySequence() {
   if (state.running) return;
+  resetFightersForFight();
+  updateHealthBars();
+  state.winner = null;
+  state.awaitingConfirm = false;
+  state.confirmPromptShown = false;
   state.readyScreen = true;
   setStartButtonVisible(false);
   setModeSelectVisible(false);
@@ -595,7 +603,7 @@ function update() {
 
   if (state.awaitingConfirm && !state.confirmPromptShown) {
     state.confirmPromptShown = true;
-    setPrompt("Press <strong>Space</strong> or <strong>Enter</strong> to confirm!");
+    setPrompt("Tap or click <strong>Start</strong> to play again!");
   }
 
   if (state.running) {
@@ -671,13 +679,12 @@ window.addEventListener("keydown", (event) => {
     }
   }
 
-  if (!state.running && (event.code === "Space" || event.code === "Enter")) {
-    if (state.awaitingConfirm) {
+    if (!state.running && (event.code === "Space" || event.code === "Enter")) {
+      if (state.awaitingConfirm) {
+        return;
+      }
       beginReadySequence();
-      return;
     }
-    beginReadySequence();
-  }
 });
 
 window.addEventListener("keyup", (event) => {
