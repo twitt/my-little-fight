@@ -267,9 +267,9 @@ function resizeCanvas() {
   
   // Update fighter sizes based on scale (minimum sizes for mobile)
   const scale = getScaleFactor();
-  fighters.little.desiredHeight = Math.max(100, Math.round(160 * scale));
+  fighters.little.desiredHeight = Math.max(80, Math.round(160 * scale));
   fighters.little.drawHeight = fighters.little.desiredHeight;
-  fighters.big.desiredHeight = Math.max(140, Math.round(220 * scale));
+  fighters.big.desiredHeight = Math.max(110, Math.round(220 * scale));
   fighters.big.drawHeight = fighters.big.desiredHeight;
   updateFighterSize(fighters.little);
   updateFighterSize(fighters.big);
@@ -628,7 +628,7 @@ function spawnFireball(fighter) {
   state.fireballs.push({
     x: fighter.x + fighter.facing * 60,
     y: fighter.y - (fighter.drawHeight || fighter.height) * 0.5,
-    vx: fighter.facing * 12,
+    vx: fighter.facing * 6,
     size: fireballSize,
     owner: fighter.name,
     color: fighter.color,
@@ -1177,12 +1177,16 @@ function draw() {
     ctx.save();
     ctx.globalAlpha = 0.95;
     ctx.fillStyle = "#ff4f8b";
-    ctx.font = "bold 36px Fredoka, sans-serif";
+    // Scale font size for mobile
+    const titleSize = Math.min(36, world.width * 0.055);
+    const subtitleSize = Math.min(28, world.width * 0.045);
+    const yPos = Math.min(175, world.height * 0.28);
+    ctx.font = `bold ${titleSize}px Fredoka, sans-serif`;
     ctx.textAlign = "center";
-    ctx.fillText("NEW FIGHT STARTS NOW!", world.width / 2, 175);
+    ctx.fillText("NEW FIGHT STARTS NOW!", world.width / 2, yPos);
     ctx.fillStyle = "#181a33";
-    ctx.font = "bold 28px Fredoka, sans-serif";
-    ctx.fillText("ARE YOU READY?", world.width / 2, 212);
+    ctx.font = `bold ${subtitleSize}px Fredoka, sans-serif`;
+    ctx.fillText("ARE YOU READY?", world.width / 2, yPos + titleSize + 5);
     ctx.restore();
   }
 
