@@ -485,7 +485,7 @@ canvas {
 .mobile-controls {
   display: none;
   gap: 12px;
-  justify-content: space-between;
+  justify-content: center;
   align-items: stretch;
   padding: 10px 0;
 }
@@ -495,6 +495,15 @@ canvas {
   gap: 8px;
   flex: 1;
   max-width: 45%;
+}
+
+.mobile-side.hidden {
+  display: none;
+}
+
+/* When only one side is visible, center and expand it */
+.mobile-controls:has(.mobile-side.hidden) .mobile-side:not(.hidden) {
+  max-width: 60%;
 }
 
 .mobile-row {

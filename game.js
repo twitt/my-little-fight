@@ -249,6 +249,19 @@ function syncModeUi() {
   characterSelect.classList.toggle("hidden", state.mode !== "single");
   chooseLittleButton.classList.toggle("active", state.playerSide === "little");
   chooseBigButton.classList.toggle("active", state.playerSide === "big");
+  
+  // Show/hide mobile controls based on mode
+  const littleSide = document.getElementById("mobile-little");
+  const bigSide = document.getElementById("mobile-big");
+  if (littleSide && bigSide) {
+    if (state.mode === "two") {
+      littleSide.classList.remove("hidden");
+      bigSide.classList.remove("hidden");
+    } else {
+      littleSide.classList.toggle("hidden", state.playerSide !== "little");
+      bigSide.classList.toggle("hidden", state.playerSide !== "big");
+    }
+  }
 }
 
 function updateHealthBars() {
@@ -296,7 +309,7 @@ function announceWinner(name) {
 
 function startMusic() {
   if (!music) return;
-  music.volume = 0.06;
+  music.volume = 0.015;
   music.loop = true;
   music.play().catch(() => {});
 }
@@ -335,7 +348,7 @@ function playHitSfx() {
   if (!hitSfx) return;
   if (!hitSfx.paused) return;
   hitSfx.currentTime = 0;
-  hitSfx.volume = 0.6;
+  hitSfx.volume = 1.0;
   hitSfx.play().catch(() => {});
 }
 
@@ -354,7 +367,7 @@ function playWinSfx(name) {
 
   winnerPresound.pause();
   winnerPresound.currentTime = 0;
-  winnerPresound.volume = 0.6;
+  winnerPresound.volume = 1.0;
   winnerPresound.play().catch(() => {});
   winnerSound.play().catch(() => {});
 }
