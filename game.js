@@ -394,7 +394,7 @@ function playWinSfx(name) {
 
   winnerPresound.pause();
   winnerPresound.currentTime = 0;
-  winnerPresound.volume = 1.0;
+  winnerPresound.volume = 0.8;
   winnerPresound.play().catch(() => {});
   winnerSound.play().catch(() => {});
 }
