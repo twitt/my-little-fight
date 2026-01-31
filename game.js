@@ -161,7 +161,9 @@ function resetGame() {
 }
 
 function resetFightersForFight() {
-  fighters.little.x = 220;
+  const margin = Math.max(100, world.width * 0.15);
+  
+  fighters.little.x = margin;
   fighters.little.y = world.floor;
   fighters.little.vx = 0;
   fighters.little.vy = 0;
@@ -172,7 +174,7 @@ function resetFightersForFight() {
   fighters.little.hitFlash = 0;
   fighters.little.hits = 0;
 
-  fighters.big.x = world.width - 260;
+  fighters.big.x = world.width - margin;
   fighters.big.y = world.floor;
   fighters.big.vx = 0;
   fighters.big.vy = 0;
@@ -184,15 +186,36 @@ function resetFightersForFight() {
   fighters.big.hits = 0;
 }
 
+function getScaleFactor() {
+  return Math.min(world.width / 1100, world.height / 620, 1);
+}
+
 function resizeCanvas() {
   const rect = canvas.getBoundingClientRect();
-  const scale = window.devicePixelRatio || 1;
-  canvas.width = Math.round(rect.width * scale);
-  canvas.height = Math.round(rect.height * scale);
-  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(rect.width * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   world.width = rect.width;
   world.height = rect.height;
-  world.floor = world.height - 120;
+  world.floor = world.height - Math.max(60, world.height * 0.15);
+  
+  // Update fighter sizes based on scale
+  const scale = getScaleFactor();
+  fighters.little.desiredHeight = Math.round(160 * scale);
+  fighters.little.drawHeight = fighters.little.desiredHeight;
+  fighters.big.desiredHeight = Math.round(220 * scale);
+  fighters.big.drawHeight = fighters.big.desiredHeight;
+  updateFighterSize(fighters.little);
+  updateFighterSize(fighters.big);
+  
+  // Scale movement values
+  fighters.little.speed = 6 * scale;
+  fighters.little.jumpPower = 18 * scale;
+  fighters.little.dashPower = 11 * scale;
+  fighters.big.speed = 5 * scale;
+  fighters.big.jumpPower = 17 * scale;
+  fighters.big.dashPower = 10 * scale;
 }
 
 function showOverlay(text, visible, statsHtml = "") {

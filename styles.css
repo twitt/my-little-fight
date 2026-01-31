@@ -484,44 +484,48 @@ canvas {
 /* ===== MOBILE CONTROLS ===== */
 .mobile-controls {
   display: none;
-  gap: 10px;
+  gap: 12px;
   justify-content: space-between;
   align-items: stretch;
-  padding: 8px 0;
+  padding: 10px 0;
 }
 
 .mobile-side {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   flex: 1;
+  max-width: 45%;
 }
 
 .mobile-row {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   justify-content: center;
 }
 
 .mobile-btn {
   flex: 1;
-  max-width: 80px;
-  min-height: 48px;
-  padding: 10px 8px;
-  border-radius: 12px;
+  min-width: 56px;
+  max-width: 90px;
+  min-height: 52px;
+  padding: 12px 10px;
+  border-radius: 14px;
   border: none;
   background: var(--game-card);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: #181a33;
   cursor: pointer;
   transition: all 0.1s ease;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .mobile-btn:active {
-  transform: scale(0.95);
+  transform: scale(0.92);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 79, 139, 0.15);
 }
 
 /* ===== RESPONSIVE ===== */
@@ -586,8 +590,8 @@ canvas {
   }
 
   .mobile-btn {
-    min-height: 44px;
-    font-size: 13px;
+    min-height: 50px;
+    font-size: 14px;
   }
 }
 
@@ -618,10 +622,10 @@ canvas {
   }
 
   .mobile-btn {
-    min-height: 40px;
-    padding: 8px 6px;
-    font-size: 12px;
-    border-radius: 10px;
+    min-height: 46px;
+    padding: 10px 8px;
+    font-size: 13px;
+    border-radius: 12px;
   }
 
   .overlay-card {
@@ -641,6 +645,139 @@ canvas {
   .mode {
     padding: 8px 12px;
     font-size: 12px;
+  }
+}
+
+/* Landscape mode on phones */
+@media (max-height: 500px) and (orientation: landscape) {
+  .page {
+    padding: 4px 8px;
+    gap: 4px;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  .hud {
+    padding: 6px 12px;
+    gap: 6px;
+    border-radius: 10px;
+  }
+
+  .logo {
+    font-size: 13px;
+  }
+
+  .themes {
+    order: 0;
+    width: auto;
+  }
+
+  .theme-btn {
+    padding: 4px 10px;
+    font-size: 10px;
+  }
+
+  .status {
+    order: 0;
+    width: auto;
+    flex: 1;
+    gap: 8px;
+  }
+
+  .health .label {
+    font-size: 9px;
+  }
+
+  .bar {
+    height: 10px;
+  }
+
+  .restart {
+    order: 0;
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .stage {
+    border-radius: 10px;
+  }
+
+  .mobile-controls {
+    padding: 4px 0;
+    gap: 16px;
+  }
+
+  .mobile-side {
+    gap: 4px;
+    max-width: 48%;
+  }
+
+  .mobile-row {
+    gap: 4px;
+  }
+
+  .mobile-btn {
+    min-height: 38px;
+    padding: 6px 4px;
+    font-size: 11px;
+    border-radius: 8px;
+    min-width: 44px;
+  }
+
+  .overlay-card {
+    padding: 12px 16px;
+    width: 300px;
+  }
+
+  .overlay-card h1 {
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+
+  .stats {
+    margin: 6px 0 8px;
+    font-size: 12px;
+  }
+
+  .mode-select {
+    margin: 8px 0;
+    gap: 6px;
+  }
+
+  .mode {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .start {
+    margin-top: 8px;
+    padding: 10px 20px;
+    font-size: 13px;
+  }
+}
+
+/* Tablet */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .mobile-controls {
+    display: flex;
+  }
+
+  .controls {
+    display: none;
+  }
+
+  .mobile-btn {
+    min-height: 56px;
+    font-size: 16px;
+    max-width: 100px;
+  }
+
+  .mobile-side {
+    gap: 10px;
+    max-width: 40%;
+  }
+
+  .mobile-row {
+    gap: 10px;
   }
 }
 
