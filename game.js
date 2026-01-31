@@ -29,6 +29,7 @@ const mobileControls = document.getElementById("mobile-controls");
 let audioInitialized = false;
 let audioContext = null;
 let musicGainNode = null;
+let presoundGainNode = null;
 
 function initAudio() {
   if (audioInitialized) return;
@@ -37,13 +38,23 @@ function initAudio() {
   // Create Web Audio API context for iOS volume control
   try {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
     if (music) {
       music.src = "music.mp3";
-      const source = audioContext.createMediaElementSource(music);
+      const musicSource = audioContext.createMediaElementSource(music);
       musicGainNode = audioContext.createGain();
       musicGainNode.gain.value = 0.06; // Music volume (0-1)
-      source.connect(musicGainNode);
+      musicSource.connect(musicGainNode);
       musicGainNode.connect(audioContext.destination);
+    }
+    
+    if (winnerPresound) {
+      winnerPresound.src = "winner-presound.mp3";
+      const presoundSource = audioContext.createMediaElementSource(winnerPresound);
+      presoundGainNode = audioContext.createGain();
+      presoundGainNode.gain.value = 0.15; // Presound volume (0-1)
+      presoundSource.connect(presoundGainNode);
+      presoundGainNode.connect(audioContext.destination);
     }
   } catch (e) {
     // Fallback if Web Audio API fails
@@ -51,11 +62,14 @@ function initAudio() {
       music.src = "music.mp3";
       music.volume = 0.06;
     }
+    if (winnerPresound) {
+      winnerPresound.src = "winner-presound.mp3";
+      winnerPresound.volume = 0.15;
+    }
   }
   
   if (readySfx) readySfx.src = "are-you-ready.m4a";
   if (hitSfx) hitSfx.src = "hit.m4a";
-  if (winnerPresound) winnerPresound.src = "winner-presound.mp3";
   if (littleWinsSfx) littleWinsSfx.src = "little-wins.m4a";
   if (bigWinsSfx) bigWinsSfx.src = "big-wins.m4a";
 }
@@ -394,7 +408,7 @@ function playWinSfx(name) {
 
   winnerPresound.pause();
   winnerPresound.currentTime = 0;
-  winnerPresound.volume = 0.06;
+  // Volume controlled by Web Audio API gain node (0.15)
   winnerPresound.play().catch(() => {});
   winnerSound.play().catch(() => {});
 }
