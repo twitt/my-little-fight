@@ -27,8 +27,8 @@ const assets = {
   big: new Image(),
 };
 
-assets.little.src = "little fighter.png";
-assets.big.src = "big fighter.png";
+assets.little.src = "little-fighter.png";
+assets.big.src = "big-fighter.png";
 
 const world = {
   width: canvas.width,
