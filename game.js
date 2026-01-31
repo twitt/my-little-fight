@@ -17,6 +17,7 @@ const chooseBigButton = document.getElementById("choose-big");
 const music = document.getElementById("music");
 const readySfx = document.getElementById("ready-sfx");
 const hitSfx = document.getElementById("hit-sfx");
+const fireballSfx = document.getElementById("fireball-sfx");
 const winnerPresound = document.getElementById("winner-presound");
 const littleWinsSfx = document.getElementById("little-wins");
 const bigWinsSfx = document.getElementById("big-wins");
@@ -87,6 +88,7 @@ function initAudio() {
   
   if (readySfx) readySfx.src = "are-you-ready.m4a";
   if (hitSfx) hitSfx.src = "hit.m4a";
+  if (fireballSfx) fireballSfx.src = "fireball.m4a";
   // Winner sounds are loaded via Web Audio API above, fallback here
   if (littleWinsSfx && !littleWinsGainNode) littleWinsSfx.src = "little-wins.m4a";
   if (bigWinsSfx && !bigWinsGainNode) bigWinsSfx.src = "big-wins.m4a";
@@ -116,6 +118,7 @@ const state = {
   particles: [],
   stars: [],
   confetti: [],
+  fireballs: [],
   awaitingConfirm: false,
   lockUntil: 0,
   confirmPromptShown: false,
@@ -175,6 +178,8 @@ function createFighter(config) {
     drawWidth: config.width,
     drawHeight: config.height,
     flip: config.flip ?? 1,
+    combo: [],
+    comboTimeout: 0,
   };
 }
 
@@ -197,6 +202,7 @@ function resetGame() {
   state.time = 0;
   state.particles = [];
   state.confetti = [];
+  state.fireballs = [];
   state.awaitingConfirm = false;
   state.lockUntil = 0;
   state.confirmPromptShown = false;
@@ -227,6 +233,8 @@ function resetFightersForFight() {
   fighters.little.dashCooldown = 0;
   fighters.little.hitFlash = 0;
   fighters.little.hits = 0;
+  fighters.little.combo = [];
+  fighters.little.comboTimeout = 0;
 
   fighters.big.x = world.width - margin;
   fighters.big.y = world.floor;
@@ -238,6 +246,8 @@ function resetFightersForFight() {
   fighters.big.dashCooldown = 0;
   fighters.big.hitFlash = 0;
   fighters.big.hits = 0;
+  fighters.big.combo = [];
+  fighters.big.comboTimeout = 0;
 }
 
 function getScaleFactor() {
@@ -509,6 +519,14 @@ function playHitSfx() {
   hitSfx.play().catch(() => {});
 }
 
+function playFireballSfx() {
+  if (!fireballSfx) return;
+  if (!fireballSfx.paused) return;
+  fireballSfx.currentTime = 0;
+  fireballSfx.volume = 1.0;
+  fireballSfx.play().catch(() => {});
+}
+
 function playWinSfx(name) {
   const winnerSound = name === "Little" ? littleWinsSfx : bigWinsSfx;
   if (!winnerSound) return;
@@ -576,6 +594,152 @@ function spawnConfetti(count) {
   }
 }
 
+// Combo system for fireball: attack, attack, dash, attack
+const FIREBALL_COMBO = ["attack", "attack", "dash", "attack"];
+const COMBO_TIMEOUT = 90; // frames to complete combo (1.5 seconds at 60fps)
+
+function addToCombo(fighter, action) {
+  // Reset combo if timed out
+  if (fighter.comboTimeout <= 0) {
+    fighter.combo = [];
+  }
+  
+  fighter.combo.push(action);
+  fighter.comboTimeout = COMBO_TIMEOUT;
+  
+  // Keep only last 4 actions
+  if (fighter.combo.length > 4) {
+    fighter.combo.shift();
+  }
+  
+  // Check for fireball combo
+  if (fighter.combo.length === 4 &&
+      fighter.combo[0] === "attack" &&
+      fighter.combo[1] === "attack" &&
+      fighter.combo[2] === "dash" &&
+      fighter.combo[3] === "attack") {
+    spawnFireball(fighter);
+    fighter.combo = [];
+  }
+}
+
+function spawnFireball(fighter) {
+  const fireballSize = 40;
+  state.fireballs.push({
+    x: fighter.x + fighter.facing * 60,
+    y: fighter.y - (fighter.drawHeight || fighter.height) * 0.5,
+    vx: fighter.facing * 12,
+    size: fireballSize,
+    owner: fighter.name,
+    color: fighter.color,
+    life: 180, // 3 seconds
+  });
+  
+  // Sound and visual feedback
+  playFireballSfx();
+  spawnBurst(fighter.x + fighter.facing * 40, fighter.y - fighter.height * 0.5, 15, fighter.color);
+  state.screenShake = 8;
+}
+
+function updateFireballs() {
+  const little = fighters.little;
+  const big = fighters.big;
+  
+  state.fireballs = state.fireballs.filter((fireball) => {
+    fireball.x += fireball.vx;
+    fireball.life -= 1;
+    
+    // Check if out of bounds
+    if (fireball.x < -50 || fireball.x > world.width + 50 || fireball.life <= 0) {
+      spawnBurst(fireball.x, fireball.y, 8, fireball.color);
+      return false;
+    }
+    
+    // Check collision with fighters
+    const target = fireball.owner === "Little" ? big : little;
+    const targetWidth = target.drawWidth || target.width;
+    const targetHeight = target.drawHeight || target.height;
+    
+    const dx = Math.abs(fireball.x - target.x);
+    const dy = fireball.y - (target.y - targetHeight * 0.5);
+    
+    // Hit detection - can be jumped over!
+    // Fireball is at a fixed height, so if target is jumping high enough, they dodge it
+    const horizontalHit = dx < (fireball.size + targetWidth) * 0.4;
+    const verticalHit = Math.abs(dy) < targetHeight * 0.4;
+    
+    if (horizontalHit && verticalHit && target.hitFlash <= 0) {
+      // Hit!
+      const attacker = fireball.owner === "Little" ? little : big;
+      target.health = clamp(target.health - 15, 0, 100); // Fireballs do more damage
+      attacker.hits += 1;
+      target.vx += Math.sign(fireball.vx) * 8;
+      target.vy -= 5;
+      target.hitFlash = 15;
+      state.screenShake = 12;
+      spawnBurst(fireball.x, fireball.y, 25, fireball.color);
+      spawnBurst(fireball.x, fireball.y, 15, "#ffffff");
+      playHitSfx();
+      updateHealthBars();
+      
+      if (target.health <= 0) {
+        announceWinner(attacker.name);
+      }
+      return false;
+    }
+    
+    return true;
+  });
+}
+
+function drawFireballs() {
+  const cyber = isCyberTheme();
+  
+  state.fireballs.forEach((fireball) => {
+    ctx.save();
+    
+    // Glow effect
+    ctx.shadowColor = fireball.color;
+    ctx.shadowBlur = 25;
+    
+    // Main fireball
+    const gradient = ctx.createRadialGradient(
+      fireball.x, fireball.y, 0,
+      fireball.x, fireball.y, fireball.size
+    );
+    gradient.addColorStop(0, "#ffffff");
+    gradient.addColorStop(0.3, fireball.color);
+    gradient.addColorStop(0.7, cyber ? "#ff2afc" : "#ff4f8b");
+    gradient.addColorStop(1, "rgba(255, 100, 0, 0)");
+    
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(fireball.x, fireball.y, fireball.size, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Inner core
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(fireball.x, fireball.y, fireball.size * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Trail particles
+    for (let i = 0; i < 3; i++) {
+      const trailX = fireball.x - fireball.vx * (i + 1) * 0.5;
+      const trailY = fireball.y + (Math.random() - 0.5) * 10;
+      const trailSize = fireball.size * (0.5 - i * 0.1);
+      ctx.globalAlpha = 0.5 - i * 0.15;
+      ctx.fillStyle = fireball.color;
+      ctx.beginPath();
+      ctx.arc(trailX, trailY, trailSize, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    ctx.restore();
+  });
+}
+
 function handleInput() {
   const little = fighters.little;
   const big = fighters.big;
@@ -599,6 +763,7 @@ function handleInput() {
       little.vx += little.facing * little.dashPower;
       little.dashCooldown = 30;
       spawnBurst(little.x, little.y - little.height / 2, 8, "#ffd53d");
+      addToCombo(little, "dash");
     }
   }
 
@@ -621,6 +786,7 @@ function handleInput() {
       big.vx += big.facing * big.dashPower;
       big.dashCooldown = 30;
       spawnBurst(big.x, big.y - big.height / 2, 8, "#ffd53d");
+      addToCombo(big, "dash");
     }
   }
 }
@@ -660,6 +826,7 @@ function tryAttack(attacker, defender) {
   attacker.attackCooldown = 24;
   attacker.glow = 10;
   playHitSfx();
+  addToCombo(attacker, "attack");
 
   const attackerWidth = attacker.drawWidth || attacker.width;
   const defenderWidth = defender.drawWidth || defender.width;
@@ -696,6 +863,7 @@ function updateFighter(fighter) {
   fighter.dashCooldown = Math.max(0, fighter.dashCooldown - 1);
   fighter.glow = Math.max(0, fighter.glow - 1);
   fighter.hitFlash = Math.max(0, fighter.hitFlash - 1);
+  fighter.comboTimeout = Math.max(0, fighter.comboTimeout - 1);
 }
 
 function updateParticles() {
@@ -975,6 +1143,7 @@ function update() {
 
     updateFighter(fighters.little);
     updateFighter(fighters.big);
+    updateFireballs();
   }
 
   updateParticles();
@@ -998,6 +1167,8 @@ function draw() {
 
   drawFighter(fighters.little);
   drawFighter(fighters.big);
+
+  drawFireballs();
 
   drawHitline(fighters.little);
   drawHitline(fighters.big);
