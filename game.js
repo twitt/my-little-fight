@@ -22,6 +22,7 @@ const winnerPresound = document.getElementById("winner-presound");
 const littleWinsSfx = document.getElementById("little-wins");
 const bigWinsSfx = document.getElementById("big-wins");
 const mobileControls = document.getElementById("mobile-controls");
+const restartButton = document.getElementById("restart-button");
 
 /* Lazy load audio on first interaction */
 let audioInitialized = false;
@@ -119,6 +120,7 @@ const state = {
   stars: [],
   confetti: [],
   fireballs: [],
+  poops: [],
   awaitingConfirm: false,
   lockUntil: 0,
   confirmPromptShown: false,
@@ -203,6 +205,7 @@ function resetGame() {
   state.particles = [];
   state.confetti = [];
   state.fireballs = [];
+  state.poops = [];
   state.awaitingConfirm = false;
   state.lockUntil = 0;
   state.confirmPromptShown = false;
@@ -217,6 +220,7 @@ function resetGame() {
   showOverlay("Start Game", true, "");
   setStartButtonVisible(true);
   setModeSelectVisible(true);
+  setRestartButtonVisible(false);
   syncModeUi();
 }
 
@@ -251,8 +255,9 @@ function resetFightersForFight() {
 }
 
 function getScaleFactor() {
-  // Don't scale below 0.6 to keep characters visible on mobile
-  return Math.max(0.6, Math.min(world.width / 1100, world.height / 620, 1));
+  // Scale proportionally to screen size but ensure good visibility
+  // Use 0.5 as min to give more room on small screens
+  return Math.max(0.5, Math.min(world.width / 1100, world.height / 620, 1));
 }
 
 function resizeCanvas() {
@@ -265,23 +270,24 @@ function resizeCanvas() {
   world.height = rect.height;
   world.floor = world.height - Math.max(60, world.height * 0.15);
   
-  // Update fighter sizes based on scale (minimum sizes for mobile)
+  // Update fighter sizes based on scale
+  // Use proportional scaling to make mobile feel same as desktop
   const scale = getScaleFactor();
-  fighters.little.desiredHeight = Math.max(80, Math.round(160 * scale));
+  fighters.little.desiredHeight = Math.round(160 * scale);
   fighters.little.drawHeight = fighters.little.desiredHeight;
-  fighters.big.desiredHeight = Math.max(110, Math.round(220 * scale));
+  fighters.big.desiredHeight = Math.round(220 * scale);
   fighters.big.drawHeight = fighters.big.desiredHeight;
   updateFighterSize(fighters.little);
   updateFighterSize(fighters.big);
   
-  // Keep movement values constant - don't scale them
-  // This ensures consistent gameplay feel across devices
-  fighters.little.speed = 6;
-  fighters.little.jumpPower = 18;
-  fighters.little.dashPower = 11;
-  fighters.big.speed = 5;
-  fighters.big.jumpPower = 17;
-  fighters.big.dashPower = 10;
+  // Scale movement values proportionally to maintain gameplay feel
+  const moveScale = Math.max(0.7, scale);
+  fighters.little.speed = 6 * moveScale;
+  fighters.little.jumpPower = 18 * moveScale;
+  fighters.little.dashPower = 11 * moveScale;
+  fighters.big.speed = 5 * moveScale;
+  fighters.big.jumpPower = 17 * moveScale;
+  fighters.big.dashPower = 10 * moveScale;
 }
 
 function showOverlay(text, visible, statsHtml = "") {
@@ -306,6 +312,11 @@ function setStartButtonVisible(visible) {
 function setModeSelectVisible(visible) {
   if (!modeSelect) return;
   modeSelect.classList.toggle("hidden", !visible);
+}
+
+function setRestartButtonVisible(visible) {
+  if (!restartButton) return;
+  restartButton.classList.toggle("hidden", !visible);
 }
 
 function syncModeUi() {
@@ -452,6 +463,7 @@ function startGame() {
   startMusic();
   setStartButtonVisible(false);
   setModeSelectVisible(false);
+  setRestartButtonVisible(true);
   showOverlay("", false);
 }
 
@@ -465,6 +477,7 @@ function announceWinner(name) {
   showOverlay(`${name} Wins!`, true, getStatsHtml());
   setStartButtonVisible(true);
   setModeSelectVisible(false);
+  setRestartButtonVisible(false);
   playWinSfx(name);
   spawnConfetti(120);
 }
@@ -551,7 +564,7 @@ function applyDamage(attacker, defender) {
   if (!state.running || state.winner) return;
   if (defender.hitFlash > 0) return;
 
-  defender.health = clamp(defender.health - 10, 0, 100);
+  defender.health = clamp(defender.health - 5, 0, 100);
   attacker.hits += 1;
   defender.vx += attacker.facing * 6;
   defender.vy -= 6;
@@ -595,7 +608,7 @@ function spawnConfetti(count) {
 }
 
 // Combo system for fireball: attack, attack, dash, attack
-const FIREBALL_COMBO = ["attack", "attack", "dash", "attack"];
+// Combo system for poop: dash, dash, dash
 const COMBO_TIMEOUT = 90; // frames to complete combo (1.5 seconds at 60fps)
 
 function addToCombo(fighter, action) {
@@ -612,14 +625,25 @@ function addToCombo(fighter, action) {
     fighter.combo.shift();
   }
   
-  // Check for fireball combo
-  if (fighter.combo.length === 4 &&
-      fighter.combo[0] === "attack" &&
-      fighter.combo[1] === "attack" &&
-      fighter.combo[2] === "dash" &&
-      fighter.combo[3] === "attack") {
+  // Check for fireball combo: attack, attack, dash, attack
+  if (fighter.combo.length >= 4 &&
+      fighter.combo[fighter.combo.length - 4] === "attack" &&
+      fighter.combo[fighter.combo.length - 3] === "attack" &&
+      fighter.combo[fighter.combo.length - 2] === "dash" &&
+      fighter.combo[fighter.combo.length - 1] === "attack") {
     spawnFireball(fighter);
     fighter.combo = [];
+    return;
+  }
+  
+  // Check for poop combo: dash, dash, dash
+  if (fighter.combo.length >= 3 &&
+      fighter.combo[fighter.combo.length - 3] === "dash" &&
+      fighter.combo[fighter.combo.length - 2] === "dash" &&
+      fighter.combo[fighter.combo.length - 1] === "dash") {
+    spawnPoop(fighter);
+    fighter.combo = [];
+    return;
   }
 }
 
@@ -628,7 +652,7 @@ function spawnFireball(fighter) {
   state.fireballs.push({
     x: fighter.x + fighter.facing * 60,
     y: fighter.y - (fighter.drawHeight || fighter.height) * 0.5,
-    vx: fighter.facing * 6,
+    vx: fighter.facing * 4,
     size: fireballSize,
     owner: fighter.name,
     color: fighter.color,
@@ -671,7 +695,7 @@ function updateFireballs() {
     if (horizontalHit && verticalHit && target.hitFlash <= 0) {
       // Hit!
       const attacker = fireball.owner === "Little" ? little : big;
-      target.health = clamp(target.health - 15, 0, 100); // Fireballs do more damage
+      target.health = clamp(target.health - 8, 0, 100); // Fireballs do more damage
       attacker.hits += 1;
       target.vx += Math.sign(fireball.vx) * 8;
       target.vy -= 5;
@@ -740,6 +764,135 @@ function drawFireballs() {
   });
 }
 
+function spawnPoop(fighter) {
+  // Turn fighter around (back to opponent)
+  fighter.facing = -fighter.facing;
+  
+  const poopSize = 30;
+  state.poops.push({
+    x: fighter.x - fighter.facing * 40, // spawn behind (since we flipped)
+    y: fighter.y - (fighter.drawHeight || fighter.height) * 0.3,
+    vx: -fighter.facing * 4, // fly towards opponent (opposite of new facing)
+    size: poopSize,
+    owner: fighter.name,
+    life: 240, // 4 seconds
+    rotation: 0,
+  });
+  
+  // Visual feedback
+  spawnBurst(fighter.x - fighter.facing * 30, fighter.y - fighter.height * 0.3, 10, "#8B4513");
+  state.screenShake = 5;
+}
+
+function updatePoops() {
+  const little = fighters.little;
+  const big = fighters.big;
+  
+  state.poops = state.poops.filter((poop) => {
+    poop.x += poop.vx;
+    poop.life -= 1;
+    poop.rotation += 0.15;
+    
+    // Check if out of bounds
+    if (poop.x < -50 || poop.x > world.width + 50 || poop.life <= 0) {
+      return false;
+    }
+    
+    // Check collision with fighters
+    const target = poop.owner === "Little" ? big : little;
+    const targetWidth = target.drawWidth || target.width;
+    const targetHeight = target.drawHeight || target.height;
+    
+    const dx = Math.abs(poop.x - target.x);
+    const dy = poop.y - (target.y - targetHeight * 0.5);
+    
+    // Hit detection - can be jumped over
+    const horizontalHit = dx < (poop.size + targetWidth) * 0.4;
+    const verticalHit = Math.abs(dy) < targetHeight * 0.4;
+    
+    if (horizontalHit && verticalHit && target.hitFlash <= 0) {
+      // Hit! Spawn poop splashes
+      const attacker = poop.owner === "Little" ? little : big;
+      target.health = clamp(target.health - 6, 0, 100);
+      attacker.hits += 1;
+      target.vx += Math.sign(poop.vx) * 6;
+      target.vy -= 4;
+      target.hitFlash = 15;
+      state.screenShake = 8;
+      
+      // Poop splash effect - brown particles falling down
+      spawnPoopSplash(poop.x, poop.y, 20);
+      playHitSfx();
+      updateHealthBars();
+      
+      if (target.health <= 0) {
+        announceWinner(attacker.name);
+      }
+      return false;
+    }
+    
+    return true;
+  });
+}
+
+function spawnPoopSplash(x, y, count) {
+  const brownColors = ["#8B4513", "#A0522D", "#6B4423", "#5C4033", "#3D2314"];
+  for (let i = 0; i < count; i++) {
+    state.particles.push({
+      x: x + (Math.random() - 0.5) * 30,
+      y: y,
+      vx: (Math.random() - 0.5) * 6,
+      vy: Math.random() * 3 + 2, // falling down
+      size: 5 + Math.random() * 8,
+      life: 60 + Math.random() * 30,
+      color: brownColors[Math.floor(Math.random() * brownColors.length)],
+    });
+  }
+}
+
+function drawPoops() {
+  state.poops.forEach((poop) => {
+    ctx.save();
+    ctx.translate(poop.x, poop.y);
+    ctx.rotate(poop.rotation);
+    
+    // Main poop body (💩 shape with circles)
+    const s = poop.size;
+    
+    // Bottom layer
+    ctx.fillStyle = "#8B4513";
+    ctx.beginPath();
+    ctx.ellipse(0, s * 0.3, s * 0.5, s * 0.25, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Middle layer
+    ctx.fillStyle = "#A0522D";
+    ctx.beginPath();
+    ctx.ellipse(0, 0, s * 0.4, s * 0.22, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Top layer (smaller)
+    ctx.fillStyle = "#6B4423";
+    ctx.beginPath();
+    ctx.ellipse(0, -s * 0.25, s * 0.25, s * 0.18, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Tip
+    ctx.fillStyle = "#5C4033";
+    ctx.beginPath();
+    ctx.ellipse(0, -s * 0.42, s * 0.12, s * 0.1, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Highlights
+    ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+    ctx.beginPath();
+    ctx.arc(-s * 0.15, -s * 0.1, s * 0.08, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.restore();
+  });
+}
+
 function handleInput() {
   const little = fighters.little;
   const big = fighters.big;
@@ -798,24 +951,52 @@ function updateBot() {
 
   bot.vx = 0;
   const distance = player.x - bot.x;
-  if (Math.abs(distance) > 260) {
-    bot.vx = Math.sign(distance) * bot.speed * 0.16;
+  const absDistance = Math.abs(distance);
+  
+  // Bot movement - more active walking
+  if (absDistance > 300) {
+    // Far from player - move towards them
+    bot.vx = Math.sign(distance) * bot.speed * 0.6;
     bot.facing = Math.sign(distance) || bot.facing;
-  } else if (Math.random() < 0.008) {
-    bot.vx = Math.sign(distance) * bot.speed * 0.1;
+  } else if (absDistance > 150) {
+    // Medium distance - sometimes approach, sometimes strafe
+    if (Math.random() < 0.03) {
+      bot.vx = Math.sign(distance) * bot.speed * 0.5;
+      bot.facing = Math.sign(distance) || bot.facing;
+    } else if (Math.random() < 0.02) {
+      // Random strafe
+      bot.vx = (Math.random() > 0.5 ? 1 : -1) * bot.speed * 0.4;
+    }
+  } else if (absDistance < 80) {
+    // Too close - back off sometimes
+    if (Math.random() < 0.04) {
+      bot.vx = -Math.sign(distance) * bot.speed * 0.5;
+    }
+  } else {
+    // In attack range - small movements
+    if (Math.random() < 0.02) {
+      bot.vx = (Math.random() > 0.5 ? 1 : -1) * bot.speed * 0.3;
+    }
+  }
+  
+  // Always face the player when close enough
+  if (absDistance < 300) {
+    bot.facing = Math.sign(distance) || bot.facing;
   }
 
-  if (bot.grounded && Math.random() < 0.002) {
-    bot.vy = -bot.jumpPower * 0.45;
+  // Jump more often
+  if (bot.grounded && Math.random() < 0.015) {
+    bot.vy = -bot.jumpPower * 0.7;
     bot.grounded = false;
   }
 
-  if (bot.dashCooldown <= 0 && Math.random() < 0.002) {
-    bot.vx += bot.facing * bot.dashPower * 0.15;
-    bot.dashCooldown = 110;
+  if (bot.dashCooldown <= 0 && Math.random() < 0.004) {
+    bot.vx += bot.facing * bot.dashPower * 0.3;
+    bot.dashCooldown = 80;
+    addToCombo(bot, "dash");
   }
 
-  if (bot.attackCooldown === 0 && Math.abs(distance) < 260 && Math.random() < 0.06) {
+  if (bot.attackCooldown === 0 && absDistance < 260 && Math.random() < 0.06) {
     tryAttack(bot, player);
   }
 }
@@ -1144,6 +1325,7 @@ function update() {
     updateFighter(fighters.little);
     updateFighter(fighters.big);
     updateFireballs();
+    updatePoops();
   }
 
   updateParticles();
@@ -1169,6 +1351,7 @@ function draw() {
   drawFighter(fighters.big);
 
   drawFireballs();
+  drawPoops();
 
   drawHitline(fighters.little);
   drawHitline(fighters.big);
@@ -1267,6 +1450,12 @@ startButton.addEventListener("click", () => {
   }
   beginReadySequence();
 });
+
+if (restartButton) {
+  restartButton.addEventListener("click", () => {
+    resetGame();
+  });
+}
 
 function isPhone() {
   return window.innerWidth <= 768 && 'ontouchstart' in window;
