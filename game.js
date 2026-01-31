@@ -412,24 +412,24 @@ function updateBot() {
 
   bot.vx = 0;
   const distance = player.x - bot.x;
-  if (Math.abs(distance) > 240) {
-    bot.vx = Math.sign(distance) * bot.speed * 0.22;
+  if (Math.abs(distance) > 260) {
+    bot.vx = Math.sign(distance) * bot.speed * 0.16;
     bot.facing = Math.sign(distance) || bot.facing;
-  } else if (Math.random() < 0.01) {
-    bot.vx = Math.sign(distance) * bot.speed * 0.12;
+  } else if (Math.random() < 0.008) {
+    bot.vx = Math.sign(distance) * bot.speed * 0.1;
   }
 
-  if (bot.grounded && Math.random() < 0.003) {
-    bot.vy = -bot.jumpPower * 0.5;
+  if (bot.grounded && Math.random() < 0.002) {
+    bot.vy = -bot.jumpPower * 0.45;
     bot.grounded = false;
   }
 
-  if (bot.dashCooldown <= 0 && Math.random() < 0.003) {
-    bot.vx += bot.facing * bot.dashPower * 0.2;
-    bot.dashCooldown = 90;
+  if (bot.dashCooldown <= 0 && Math.random() < 0.002) {
+    bot.vx += bot.facing * bot.dashPower * 0.15;
+    bot.dashCooldown = 110;
   }
 
-  if (bot.attackCooldown === 0 && Math.abs(distance) < 240 && Math.random() < 0.09) {
+  if (bot.attackCooldown === 0 && Math.abs(distance) < 260 && Math.random() < 0.06) {
     tryAttack(bot, player);
   }
 }
